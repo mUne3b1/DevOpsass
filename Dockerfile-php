@@ -1,0 +1,48 @@
+# Use the official PHP image with Apache
+FROM php:7.4-apache
+
+# Update packages and install required PHP extensions
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev && \
+    docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install mysqli pdo pdo_mysql gd && \
+    docker-php-ext-enable mysqli
+
+# Copy application source to the image
+COPY ./carrental /var/www/html/
+
+# Copy the custom PHP configuration
+COPY ./carrental/include/config.php /var/www/html/include/
+
+# If you have a custom Apache site configuration for your application
+COPY ./carrental/my-site.conf /etc/apache2/sites-available/my-site.conf
+
+# Set environment variables from the Apache configuration
+# Note: These are placeholders and should not be hardcoded for production use
+ENV MYSQL_DB_CONNECTION="mysql:host=localhost"
+ENV MYSQL_DB_NAME="carrental"
+ENV MYSQL_USER="root"
+ENV MYSQL_PASSWORD="1234"
+ENV SITE_URL="http://localhost"
+
+# Update Apache configuration with the environment variables
+RUN { \
+        echo 'SetEnv MYSQL_DB_CONNECTION ${MYSQL_DB_CONNECTION}'; \
+        echo 'SetEnv MYSQL_DB_NAME ${MYSQL_DB_NAME}'; \
+        echo 'SetEnv MYSQL_USER ${MYSQL_USER}'; \
+        echo 'SetEnv MYSQL_PASSWORD ${MYSQL_PASSWORD}'; \
+        echo 'SetEnv SITE_URL ${SITE_URL}'; \
+    } > /etc/apache2/conf-enabled/environment.conf
+
+# Configure Apache
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
+    a2enmod rewrite headers && \
+    a2dissite 000-default && \
+    a2ensite my-site
+
+# Expose port 80 and 443 for the web server
+EXPOSE 80
+EXPOSE 443
+
+# By default start up apache in the foreground, override with /bin/bash for interactive.
+CMD ["apache2-foreground"]

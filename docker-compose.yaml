@@ -1,0 +1,38 @@
+version: "3.3"
+services:
+  webserver:
+    image: mydemophpimage  # Replace with your actual image name
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./carrental:/var/www/html  # Adjust the local path as needed
+    environment:
+      MYSQL_DB_CONNECTION: mysql:host=db  # Adjust according to your environment
+      MYSQL_DB_NAME: carrental
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 1234
+      SITE_URL: http://localhost
+    depends_on:
+      - db
+    networks:
+      - test
+
+  db:
+    image: mysql:5.7  # or the version you want to use
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: carrental
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 1234
+    networks:
+      - test
+
+networks:
+  test:
+    driver: bridge
+
+volumes:
+  db_data:
